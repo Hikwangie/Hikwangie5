@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nền tảng học tập tương tác — Bản nâng cấp (media exam)</title>
+    <!-- UI libs (production CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --radius: 14px;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        font-family: "Be Vietnam Pro", system-ui, -apple-system, Segoe UI,
+          Roboto, sans-serif;
+      }
+      .card {
+        border-radius: var(--radius);
+        box-shadow: 0 12px 28px rgba(2, 6, 23, 0.06),
+          0 2px 8px rgba(2, 6, 23, 0.05);
+      }
+      dialog::backdrop {
+        background: rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(2px);
+      }
+      .pill {
+        border-radius: 9999px;
+      }
+      .view {
+        display: none;
+      }
+      .view.active {
+        display: block;
+      }
+      .highlighted {
+        background: #fdff85;
+        cursor: pointer;
+      }
+      .flashcard-container {
+        perspective: 1000px;
+      }
+      .flashcard {
+        width: 100%;
+        height: 160px;
+        position: relative;
+        transform-style: preserve-3d;
+        transition: transform 0.6s;
+      }
+      .flashcard.is-flipped {
+        transform: rotateY(180deg);
+      }
+      .flashcard-face {
+        position: absolute;
+        inset: 0;
+        backface-visibility: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: var(--radius);
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+      }
+      .flashcard-front {
+        background: #fff;
+        color: #0f172a;
+      }
+      .flashcard-back {
+        background: #eef2ff;
+        color: #1e1b4b;
+        transform: rotateY(180deg);
+      }
+      .prose-like p {
+        margin: 0 0 0.75rem;
+        line-height: 1.7;
+      }
+      /* Nice gradient header */
+      .hero {
+        background: radial-gradient(
+            1200px 600px at 10% -10%,
+            #c7d2fe 0%,
+            transparent 60%
+          ),
+          radial-gradient(1200px 600px at 100% 0%, #a7f3d0 0%, transparent 55%);
+      }
+      .dropzone {
+        border: 2px dashed #c7d2fe;
+        border-radius: 12px;
+        padding: 14px;
+        transition: 0.2s;
+      }
+      .dropzone.dragover {
+        border-color: #6366f1;
+        background: #f5f3ff;
+      }
+      .media-thumb {
+        aspect-ratio: 16/9;
+        object-fit: cover;
+        width: 100%;
+        border-radius: 12px;
+      }
+      .media-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 12px;
+      }
+    </style>
+  </head>
+  <body class="bg-slate-50 text-slate-800">
+    <!-- Top nav -->
+    <header
+      class="hero sticky top-0 z-30 backdrop-blur bg-white/70 border-b border-slate-200/60"
+    >
+      <div
+        class="max-w-7xl mx-auto px-4 md:px-8 py-3 flex items-center justify-between"
+      >
+        <div class="flex items-center gap-2">
+          <i data-lucide="sparkles" class="text-indigo-600"></i>
+          <p class="font-semibold">Interactive Learning</p>
+        </div>
+        <nav class="hidden md:flex items-center gap-6 text-sm text-slate-600">
+          <a class="hover:text-indigo-600" href="#">Trang chủ</a>
+          <a class="hover:text-indigo-600" href="#">Tính năng</a>
+          <a class="hover:text-indigo-600" href="#">Hỗ trợ</a>
+        </nav>
+      </div>
+    </header>
+
+    <div id="app" class="max-w-7xl mx-auto p-4 md:p-8">
+      <!-- ===== AUTH ===== -->
+      <div id="auth-view" class="view active">
+        <div class="max-w-md mx-auto card bg-white p-8">
+          <h1
+            class="text-3xl font-bold text-center flex items-center justify-center gap-2"
+          >
+            <i data-lucide="graduation-cap" class="text-indigo-600"></i>
+            Chào mừng bạn!
+          </h1>
+          <p class="text-center text-slate-500 mt-2">
+            Đăng nhập hoặc tạo tài khoản để bắt đầu.
+          </p>
+
+          <div id="auth-form-container" class="mt-6">
+            <!-- LOGIN -->
+            <form id="login-form" class="space-y-4" autocomplete="off">
+              <div>
+                <label for="login-email" class="block text-sm font-medium"
+                  >Email</label
+                >
+                <input
+                  type="email"
+                  id="login-email"
+                  required
+                  placeholder="vidu@email.com"
+                  class="mt-1 w-full rounded-md border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label for="login-password" class="block text-sm font-medium"
+                  >Mật khẩu</label
+                >
+                <input
+                  type="password"
+                  id="login-password"
+                  required
+                  placeholder="••••••••"
+                  class="mt-1 w-full rounded-md border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+              <button
+                type="submit"
+                class="w-full pill px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700"
+              >
+                Đăng nhập
+              </button>
+            </form>
+            <p class="text-center text-sm text-slate-600 mt-4">
+              Chưa có tài khoản?
+              <a
+                href="#"
+                id="show-register-link"
+                class="font-medium text-indigo-600 hover:underline"
+                >Đăng ký ngay</a
+              >
+            </p>
+          </div>
+
+          <!-- REGISTER -->
+          <div id="register-form-container" class="hidden mt-6">
+            <form id="register-form" class="space-y-4" autocomplete="off">
+              <div>
+                <label for="register-name" class="block text-sm font-medium"
+                  >Họ và tên</label
+                >
+                <input
+                  type="text"
+                  id="register-name"
+                  required
+                  placeholder="Nguyễn Văn A"
+                  class="mt-1 w-full rounded-md border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label for="register-email" class="block text-sm font-medium"
+                  >Email</label
+                >
+                <input
+                  type="email"
+                  id="register-email"
+                  required
+                  placeholder="vidu@email.com"
+                  class="mt-1 w-full rounded-md border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label for="register-password" class="block text-sm font-medium"
+                  >Mật khẩu</label
+                >
+                <input
+                  type="password"
+                  id="register-password"
+                  required
+                  placeholder="••••••••"
+                  class="mt-1 w-full rounded-md border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+              <fieldset>
+                <legend class="block text-sm font-medium mb-2">Bạn là?</legend>
+                <label class="inline-flex items-center gap-2 mr-4"
+                  ><input type="radio" name="role" value="student" checked />
+                  Học sinh</label
+                >
+                <label class="inline-flex items-center gap-2"
+                  ><input type="radio" name="role" value="teacher" /> Giáo
+                  viên</label
+                >
+              </fieldset>
+              <button
+                type="submit"
+                class="w-full pill px-4 py-2 bg-emerald-600 text-white hover:bg-emerald-700"
+              >
+                Đăng ký
+              </button>
+            </form>
+            <p class="text-center text-sm text-slate-600 mt-4">
+              Đã có tài khoản?
+              <a
+                href="#"
+                id="show-login-link"
+                class="font-medium text-indigo-600 hover:underline"
+                >Đăng nhập</a
+              >
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== TEACHER DASH ===== -->
+      <div id="teacher-view" class="view">
+        <header
+          class="flex items-start justify-between gap-4 mb-6 pb-4 border-b border-slate-200"
+        >
+          <div>
+            <h1
+              class="text-3xl font-bold text-indigo-900 flex items-center gap-2"
+            >
+              <i data-lucide="graduation-cap" class="text-indigo-600"></i>Trang
+              Giáo viên
+            </h1>
+            <p id="teacher-welcome" class="text-slate-600">
+              Chào mừng trở lại!
+            </p>
+          </div>
+          <button
+            id="logout-btn-teacher"
+            class="pill px-4 py-2 bg-rose-600 text-white hover:bg-rose-700"
+          >
+            Đăng xuất
+          </button>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Create Exam -->
+          <section class="card bg-white p-5">
+            <h2 class="text-xl font-semibold flex items-center gap-2 mb-3">
+              <i data-lucide="file-plus" class="text-indigo-600"></i>Tạo đề thi
+              mới (kèm media)
+            </h2>
+            <form id="upload-exam-form" class="space-y-4" autocomplete="off">
+              <div>
+                <label for="exam-title" class="block text-sm font-medium"
+                  >Tiêu đề đề thi</label
+                >
+                <input
+                  type="text"
+                  id="exam-title"
+                  required
+                  class="mt-1 w-full rounded-md border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label for="exam-content" class="block text-sm font-medium"
+                  >Nội dung / yêu cầu</label
+                >
+                <textarea
+                  id="exam-content"
+                  rows="8"
+                  required
+                  class="mt-1 w-full rounded-md border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+                  placeholder="Dán văn bản / câu hỏi tại đây…"
+                ></textarea>
+              </div>
+
+              <!-- NEW: Media uploader -->
+              <div>
+                <div class="flex items-center justify-between">
+                  <label class="block text-sm font-medium"
+                    >Tệp minh hoạ (JPG/PNG, MP3, MP4)</label
+                  >
+                  <span class="text-xs text-slate-500"
+                    >Tối đa ~5 tệp cho bản demo</span
+                  >
+                </div>
+                <input
+                  id="exam-media"
+                  type="file"
+                  multiple
+                  accept="image/*,audio/*,video/*"
+                  class="mt-2 block w-full text-sm"
+                />
+                <div id="dropzone" class="dropzone mt-3 text-sm text-slate-600">
+                  Kéo & thả tệp vào đây (tuỳ chọn)
+                </div>
+                <div id="media-preview" class="media-grid mt-3"></div>
+              </div>
+
+              <button
+                type="submit"
+                class="pill px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700"
+              >
+                Tạo đề thi
+              </button>
+            </form>
+          </section>
+
+          <!-- Manage Exams -->
+          <section class="card bg-white p-5">
+            <h2 class="text-xl font-semibold flex items-center gap-2 mb-3">
+              <i data-lucide="file-text" class="text-emerald-600"></i>Quản lý đề
+              thi
+            </h2>
+            <div id="teacher-exam-list" class="space-y-3"></div>
+          </section>
+        </div>
+
+        <!-- Results/Preview Modal -->
+        <dialog id="resultsDialog" class="w-full max-w-3xl rounded-2xl p-0">
+          <div class="p-5">
+            <div class="flex items-start justify-between">
+              <h3 id="results-modal-title" class="text-xl font-semibold">
+                Kết quả đề thi
+              </h3>
+              <button
+                id="close-results-modal"
+                class="pill px-3 py-1 bg-slate-100"
+              >
+                Đóng
+              </button>
+            </div>
+            <div
+              id="results-modal-content"
+              class="mt-4 max-h-[70vh] overflow-y-auto"
+            ></div>
+          </div>
+        </dialog>
+      </div>
+
+      <!-- ===== STUDENT DASH ===== -->
+      <div id="student-view" class="view">
+        <header
+          class="flex items-start justify-between gap-4 mb-6 pb-4 border-b border-slate-200"
+        >
+          <div>
+            <h1
+              class="text-3xl font-bold text-emerald-900 flex items-center gap-2"
+            >
+              <i data-lucide="book-open-check" class="text-emerald-600"></i
+              >Trang Học sinh
+            </h1>
+            <p id="student-welcome" class="text-slate-600">
+              Cùng bắt đầu học nào!
+            </p>
+          </div>
+          <button
+            id="logout-btn-student"
+            class="pill px-4 py-2 bg-rose-600 text-white hover:bg-rose-700"
+          >
+            Đăng xuất
+          </button>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="md:col-span-2 space-y-6">
+            <!-- Exam list -->
+            <section class="card bg-white p-5">
+              <h2 class="text-xl font-semibold flex items-center gap-2 mb-3">
+                <i data-lucide="book-open-check" class="text-indigo-600"></i>Đề
+                thi có sẵn
+              </h2>
+              <div id="student-exam-list" class="space-y-3"></div>
+            </section>
+            <!-- History -->
+            <section class="card bg-white p-5">
+              <h2 class="text-xl font-semibold flex items-center gap-2 mb-3">
+                <i data-lucide="history" class="text-purple-600"></i>Lịch sử làm
+                bài
+              </h2>
+              <div id="student-history" class="space-y-2">
+                <p class="text-slate-500">Bạn chưa làm bài nào.</p>
+              </div>
+            </section>
+          </div>
+          <div class="space-y-6">
+            <!-- Flashcards -->
+            <section class="card bg-white p-5">
+              <h2 class="text-xl font-semibold flex items-center gap-2 mb-3">
+                <i data-lucide="copy" class="text-orange-500"></i>Flashcard của
+                bạn
+              </h2>
+              <p class="text-slate-600 mb-3">
+                Bạn có
+                <span id="flashcard-count" class="font-bold">0</span> flashcard.
+              </p>
+              <button
+                id="view-flashcards-btn"
+                class="w-full pill px-4 py-2 bg-orange-500 text-white hover:bg-orange-600"
+              >
+                Ôn tập ngay
+              </button>
+            </section>
+            <!-- Upload question (optional) -->
+            <section class="card bg-white p-5">
+              <h2 class="text-xl font-semibold flex items-center gap-2 mb-3">
+                <i data-lucide="help-circle" class="text-rose-500"></i>Bạn cần
+                trợ giúp?
+              </h2>
+              <p class="text-slate-600 mb-3">
+                Tải ảnh bài tập của bạn lên để nhận trợ giúp từ cộng đồng.
+              </p>
+              <input
+                type="file"
+                id="question-upload"
+                class="block w-full text-sm"
+              />
+              <a
+                href="https://www.magicschool.ai/"
+                target="_blank"
+                class="mt-3 block text-center pill px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700"
+                >Hỏi bài với Magic School</a
+              >
+            </section>
+            <!-- Notification -->
+            <div
+              id="notification-panel"
+              class="p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 rounded-lg shadow-md hidden"
+            >
+              <h3 class="font-bold">Thông báo nhắc nhở!</h3>
+              <p id="notification-content">Nội dung thông báo.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== EXAM TAKING ===== -->
+      <div id="exam-taking-view" class="view">
+        <header class="mb-6 pb-4 border-b border-slate-200">
+          <h1 id="exam-taking-title" class="text-3xl font-bold text-indigo-900">
+            Làm bài thi
+          </h1>
+          <p class="text-slate-500">
+            Bôi đen từ mới bạn không biết, sau đó bấm "Lưu từ mới" để tạo
+            flashcard.
+          </p>
+        </header>
+        <section class="card bg-white p-6 mb-6">
+          <div
+            id="exam-taking-content"
+            class="prose-like text-lg leading-relaxed select-text"
+          ></div>
+          <div id="exam-taking-media" class="mt-4 space-y-4"></div>
+        </section>
+        <div class="flex flex-col md:flex-row gap-4">
+          <button
+            id="save-highlighted-btn"
+            class="flex-1 pill px-4 py-3 bg-emerald-600 text-white hover:bg-emerald-700"
+          >
+            Lưu từ mới & Hoàn thành
+          </button>
+          <button
+            id="back-to-student-dash"
+            class="flex-1 pill px-4 py-3 bg-slate-200 hover:bg-slate-300"
+          >
+            Quay lại
+          </button>
+        </div>
+      </div>
+
+      <!-- ===== FLASHCARDS ===== -->
+      <div id="flashcard-view" class="view">
+        <header
+          class="flex items-center justify-between mb-6 pb-4 border-b border-slate-200"
+        >
+          <h1 class="text-3xl font-bold text-orange-600">Ôn tập Flashcard</h1>
+          <button
+            id="back-to-student-dash-from-flashcard"
+            class="pill px-4 py-2 bg-slate-200 hover:bg-slate-300"
+          >
+            Quay lại
+          </button>
+        </header>
+        <div id="flashcard-study-area" class="max-w-xl mx-auto">
+          <p id="flashcard-progress" class="text-center text-slate-500 mb-4">
+            Card 1/10
+          </p>
+          <div class="flashcard-container">
+            <div id="current-flashcard" class="flashcard">
+              <div class="flashcard-face flashcard-front">
+                <p id="flashcard-front-content" class="text-3xl font-bold"></p>
+              </div>
+              <div class="flashcard-face flashcard-back">
+                <p id="flashcard-back-content" class="text-xl"></p>
+              </div>
+            </div>
+          </div>
+          <div class="flex justify-center mt-6">
+            <button
+              id="flip-flashcard-btn"
+              class="pill px-6 py-2 bg-indigo-600 text-white hover:bg-indigo-700"
+            >
+              Lật thẻ
+            </button>
+          </div>
+          <div class="flex justify-between items-center mt-8">
+            <button
+              id="prev-flashcard-btn"
+              class="p-3 rounded-full hover:bg-slate-200 disabled:opacity-50"
+            >
+              <i data-lucide="arrow-left"></i>
+            </button>
+            <p class="text-slate-700">
+              Đây là dạng bài ôn tập. Hãy nhớ lại nghĩa của từ!
+            </p>
+            <button
+              id="next-flashcard-btn"
+              class="p-3 rounded-full hover:bg-slate-200 disabled:opacity-50"
+            >
+              <i data-lucide="arrow-right"></i>
+            </button>
+          </div>
+        </div>
+        <div id="no-flashcards-message" class="text-center py-10 hidden">
+          <i
+            data-lucide="folder-x"
+            class="mx-auto h-16 w-16 text-slate-400"
+          ></i>
+          <h2 class="mt-4 text-2xl font-bold">Chưa có Flashcard nào</h2>
+          <p class="text-slate-500 mt-2">
+            Hãy làm bài và highlight từ mới để tạo bộ flashcard đầu tiên của
+            bạn!
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TOAST ===== -->
+    <div
+      id="toast"
+      class="fixed bottom-4 left-1/2 -translate-x-1/2 hidden px-4 py-2 bg-slate-900 text-white rounded-lg shadow-lg"
+    ></div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        lucide.createIcons();
+
+        // ====== STATE & SEED ======
+        const state = {
+          currentUser: null,
+          currentView: "auth-view",
+          exams: [
+            {
+              id: 1,
+              teacherId: 101,
+              title: "Đề thi thử Tiếng Anh - Thì Hiện tại đơn",
+              content: `English is a West Germanic language that was first spoken in early medieval England. It is the most spoken language in the world and the third most-spoken native language. This incredible language has a vast vocabulary. One of the fundamental aspects of English grammar is the use of tenses. The present simple tense is used to describe habits, un-changing situations, general truths, and fixed arrangements. For example, "The sun rises in the east." It is also used to give instructions or directions. Another important area is vocabulary building. Consistent practice is crucial for mastery.`,
+              media: [],
+              createdAt: Date.now() - 86400000,
+            },
+            {
+              id: 2,
+              teacherId: 101,
+              title: "Bài đọc hiểu về Khoa học Vũ trụ",
+              content: `Cosmology is a branch of astronomy concerned with the studies of the origin and evolution of the universe. The Big Bang theory is the leading cosmological model describing how the universe began. According to this theory, the universe started as an infinitely hot and dense single point that expanded and stretched. This expansion continues today, a phenomenon that is observable. Galaxies, stars, and planets formed from the primordial material. Understanding cosmology requires knowledge of physics and mathematics.`,
+              media: [],
+              createdAt: Date.now() - 43200000,
+            },
+          ],
+          users: [
+            {
+              id: 1,
+              name: "Nguyễn Văn An",
+              email: "student@test.com",
+              password: "123",
+              role: "student",
+              highlightedWords: ["language", "medieval", "fundamental"],
+              history: [],
+            },
+            {
+              id: 101,
+              name: "Trần Thị Bích",
+              email: "teacher@test.com",
+              password: "123",
+              role: "teacher",
+            },
+          ],
+          submissions: [
+            { studentId: 1, examId: 2, score: 85, date: "2023-10-26" },
+          ],
+        };
+
+        // ====== DOM SHORTCUTS ======
+        const $ = (sel, root = document) => root.querySelector(sel);
+        const $$ = (sel, root = document) =>
+          Array.from(root.querySelectorAll(sel));
+        const toast = (msg, t = 2200) => {
+          const el = $("#toast");
+          el.textContent = msg;
+          el.classList.remove("hidden");
+          clearTimeout(el._t);
+          el._t = setTimeout(() => el.classList.add("hidden"), t);
+        };
+
+        // Views
+        const views = $$(".view");
+        const showView = (id) => {
+          views.forEach((v) => v.classList.remove("active"));
+          $("#" + id).classList.add("active");
+          state.currentView = id;
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        };
+
+        // Auth elements
+        const loginForm = $("#login-form");
+        const registerForm = $("#register-form");
+        const showRegisterLink = $("#show-register-link");
+        const showLoginLink = $("#show-login-link");
+        const registerFormContainer = $("#register-form-container");
+        const loginFormContainer = $("#auth-form-container");
+
+        // Teacher elements
+        const teacherWelcome = $("#teacher-welcome");
+        const teacherExamList = $("#teacher-exam-list");
+        const uploadExamForm = $("#upload-exam-form");
+        const resultsDialog = $("#resultsDialog");
+        const resultsModalContent = $("#results-modal-content");
+        const resultsModalTitle = $("#results-modal-title");
+        const mediaInput = $("#exam-media");
+        const mediaPreview = $("#media-preview");
+        const dropzone = $("#dropzone");
+
+        // Student elements
+        const studentWelcome = $("#student-welcome");
+        const studentExamList = $("#student-exam-list");
+        const studentHistory = $("#student-history");
+        const flashcardCount = $("#flashcard-count");
+
+        // Exam taking
+        const examTakingContent = $("#exam-taking-content");
+        const examTakingMedia = $("#exam-taking-media");
+        const examTakingTitle = $("#exam-taking-title");
+        const saveHighlightedBtn = $("#save-highlighted-btn");
+
+        // Flashcards
+        const currentFlashcard = $("#current-flashcard");
+        const flashcardFrontContent = $("#flashcard-front-content");
+        const flashcardBackContent = $("#flashcard-back-content");
+        const prevFlashcardBtn = $("#prev-flashcard-btn");
+        const nextFlashcardBtn = $("#next-flashcard-btn");
+        const flipFlashcardBtn = $("#flip-flashcard-btn");
+        const flashcardProgress = $("#flashcard-progress");
+
+        // Notification
+        const notificationPanel = $("#notification-panel");
+        const notificationContent = $("#notification-content");
+
+        let highlightedInSession = [];
+        let currentFlashcardIndex = 0;
+        let pendingMedia = []; // hold data URLs before create exam
+
+        // ====== AUTH ======
+        showRegisterLink.addEventListener("click", (e) => {
+          e.preventDefault();
+          loginFormContainer.classList.add("hidden");
+          registerFormContainer.classList.remove("hidden");
+        });
+        showLoginLink.addEventListener("click", (e) => {
+          e.preventDefault();
+          registerFormContainer.classList.add("hidden");
+          loginFormContainer.classList.remove("hidden");
+        });
+
+        loginForm.addEventListener("submit", (e) => {
+          e.preventDefault();
+          const email = $("#login-email").value.trim();
+          const password = $("#login-password").value.trim();
+          const user = state.users.find(
+            (u) => u.email === email && u.password === password
+          );
+          if (!user) return alert("Email hoặc mật khẩu không đúng!");
+          state.currentUser = user;
+          if (user.role === "teacher") {
+            teacherWelcome.textContent = `Chào mừng trở lại, ${user.name}!`;
+            renderTeacherDashboard();
+            showView("teacher-view");
+          } else {
+            studentWelcome.textContent = `Cùng bắt đầu học nào, ${user.name}!`;
+            renderStudentDashboard();
+            showView("student-view");
+          }
+        });
+
+        registerForm.addEventListener("submit", (e) => {
+          e.preventDefault();
+          const name = $("#register-name").value.trim();
+          const email = $("#register-email").value.trim();
+          const password = $("#register-password").value.trim();
+          const role = document.querySelector(
+            'input[name="role"]:checked'
+          ).value;
+          if (state.users.some((u) => u.email === email)) {
+            alert("Email này đã được sử dụng!");
+            return;
+          }
+          const newUser = { id: Date.now(), name, email, password, role };
+          if (role === "student") {
+            newUser.highlightedWords = [];
+            newUser.history = [];
+          }
+          state.users.push(newUser);
+          alert("Đăng ký thành công! Vui lòng đăng nhập.");
+          showLoginLink.click();
+          loginForm.reset();
+          registerForm.reset();
+          $("#login-email").value = email;
+        });
+
+        $("#logout-btn-teacher").addEventListener("click", () => {
+          state.currentUser = null;
+          showView("auth-view");
+        });
+        $("#logout-btn-student").addEventListener("click", () => {
+          state.currentUser = null;
+          showView("auth-view");
+        });
+
+        // ====== TEACHER ======
+        function renderTeacherDashboard() {
+          teacherExamList.innerHTML = "";
+          const teacherExams = state.exams.filter(
+            (ex) => ex.teacherId === state.currentUser.id
+          );
+          if (!teacherExams.length) {
+            teacherExamList.innerHTML =
+              '<p class="text-slate-500">Bạn chưa tạo đề thi nào.</p>';
+            return;
+          }
+          teacherExams.sort((a, b) => b.createdAt - a.createdAt);
+          teacherExams.forEach((exam) => {
+            const el = document.createElement("div");
+            el.className =
+              "p-3 border border-slate-200 rounded-lg flex items-center justify-between";
+            el.innerHTML = `
+              <div>
+                <span class="font-medium">${escapeHtml(exam.title)}</span>
+                <p class="text-xs text-slate-500">Media: ${
+                  exam.media?.length || 0
+                } tệp</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button data-exam-id="${
+                  exam.id
+                }" class="btn-preview pill px-3 py-1 bg-slate-100 hover:bg-slate-200">Xem</button>
+                <button data-exam-id="${
+                  exam.id
+                }" class="btn-results pill px-3 py-1 bg-emerald-100 text-emerald-800 hover:bg-emerald-200">Kết quả</button>
+              </div>`;
+            teacherExamList.appendChild(el);
+          });
+        }
+
+        // Handle file input & drag-drop
+        mediaInput.addEventListener("change", async (e) => {
+          await addFiles(e.target.files);
+        });
+        ["dragover", "dragenter"].forEach((evt) =>
+          dropzone.addEventListener(evt, (e) => {
+            e.preventDefault();
+            dropzone.classList.add("dragover");
+          })
+        );
+        ["dragleave", "drop"].forEach((evt) =>
+          dropzone.addEventListener(evt, (e) => {
+            e.preventDefault();
+            dropzone.classList.remove("dragover");
+          })
+        );
+        dropzone.addEventListener("drop", async (e) => {
+          await addFiles(e.dataTransfer.files);
+        });
+
+        async function addFiles(fileList) {
+          const files = Array.from(fileList || []);
+          for (const f of files.slice(0, 5 - pendingMedia.length)) {
+            if (
+              !/^image\//.test(f.type) &&
+              !/^audio\//.test(f.type) &&
+              !/^video\//.test(f.type)
+            )
+              continue;
+            const dataUrl = await fileToDataURL(f);
+            pendingMedia.push({ name: f.name, type: f.type, dataUrl });
+          }
+          renderMediaPreview();
+        }
+
+        function renderMediaPreview() {
+          mediaPreview.innerHTML = "";
+          if (!pendingMedia.length) return;
+          pendingMedia.forEach((m, idx) => {
+            const wrap = document.createElement("div");
+            wrap.className = "relative";
+            wrap.innerHTML = `
+              <button data-idx="${idx}" class="remove-media absolute -top-2 -right-2 bg-rose-600 text-white rounded-full w-7 h-7 grid place-items-center">&times;</button>
+              ${renderMediaTag(m, true)}
+              <p class="text-xs mt-1 truncate" title="${escapeHtml(
+                m.name
+              )}">${escapeHtml(m.name)}</p>`;
+            mediaPreview.appendChild(wrap);
+          });
+        }
+
+        mediaPreview.addEventListener("click", (e) => {
+          const btn = e.target.closest(".remove-media");
+          if (!btn) return;
+          const idx = parseInt(btn.dataset.idx);
+          pendingMedia.splice(idx, 1);
+          renderMediaPreview();
+        });
+
+        uploadExamForm.addEventListener("submit", (e) => {
+          e.preventDefault();
+          const title = $("#exam-title").value.trim();
+          const content = $("#exam-content").value.trim();
+          if (!title || !content)
+            return alert("Vui lòng nhập đầy đủ thông tin.");
+          const newExam = {
+            id: Date.now(),
+            teacherId: state.currentUser.id,
+            title,
+            content,
+            media: pendingMedia.slice(),
+            createdAt: Date.now(),
+          };
+          state.exams.push(newExam);
+          uploadExamForm.reset();
+          pendingMedia = [];
+          mediaPreview.innerHTML = "";
+          renderTeacherDashboard();
+          toast("Tạo đề thi thành công");
+        });
+
+        teacherExamList.addEventListener("click", (e) => {
+          const btn = e.target.closest("button");
+          if (!btn) return;
+          const examId = parseInt(btn.dataset.examId);
+          if (btn.classList.contains("btn-results")) showResultsModal(examId);
+          if (btn.classList.contains("btn-preview")) previewExam(examId);
+        });
+
+        function previewExam(examId) {
+          const exam = state.exams.find((e) => e.id === examId);
+          if (!exam) return;
+          resultsModalTitle.textContent = `Xem trước: ${exam.title}`;
+          const mediaHTML = (exam.media || [])
+            .map((m) => `<div class='mt-3'>${renderMediaTag(m)}</div>`)
+            .join("");
+          resultsModalContent.innerHTML = `<article class='prose-like whitespace-pre-wrap'>${escapeHtml(
+            exam.content
+          )}</article>${
+            mediaHTML || '<p class="text-slate-500 mt-3">(Không có media)</p>'
+          }`;
+          resultsDialog.showModal();
+        }
+
+        function showResultsModal(examId) {
+          const exam = state.exams.find((e) => e.id === examId);
+          const subs = state.submissions.filter((s) => s.examId === examId);
+          resultsModalTitle.textContent = `Kết quả: ${exam?.title || ""}`;
+          if (!subs.length) {
+            resultsModalContent.innerHTML =
+              "<p>Chưa có học sinh nào nộp bài.</p>";
+          } else {
+            let html = `<table class='w-full text-left'><thead><tr class='bg-slate-100'><th class='p-2'>Học sinh</th><th class='p-2'>Điểm</th><th class='p-2'>Ngày nộp</th></tr></thead><tbody>`;
+            subs.forEach((s) => {
+              const student = state.users.find((u) => u.id === s.studentId);
+              html += `<tr class='border-b'><td class='p-2'>${escapeHtml(
+                student?.name || ""
+              )}</td><td class='p-2'>${s.score}</td><td class='p-2'>${
+                s.date
+              }</td></tr>`;
+            });
+            html += "</tbody></table>";
+            resultsModalContent.innerHTML = html;
+          }
+          resultsDialog.showModal();
+        }
+
+        $("#close-results-modal").addEventListener("click", () =>
+          resultsDialog.close()
+        );
+
+        // ====== STUDENT ======
+        function renderStudentDashboard() {
+          // exam list
+          studentExamList.innerHTML = "";
+          state.exams
+            .sort((a, b) => b.createdAt - a.createdAt)
+            .forEach((exam) => {
+              const t =
+                state.users.find((u) => u.id === exam.teacherId)?.name ||
+                "Giáo viên";
+              const el = document.createElement("div");
+              el.className =
+                "p-3 border border-slate-200 rounded-lg flex items-center justify-between hover:bg-slate-50";
+              el.innerHTML = `
+              <div>
+                <p class='font-medium'>${escapeHtml(exam.title)}</p>
+                <p class='text-sm text-slate-500'>Giáo viên: ${escapeHtml(
+                  t
+                )} · Media: ${exam.media?.length || 0}</p>
+              </div>
+              <button data-exam-id='${
+                exam.id
+              }' class='start-exam-btn pill px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700'>Làm bài</button>`;
+              studentExamList.appendChild(el);
+            });
+
+          // history
+          studentHistory.innerHTML = "";
+          if (!state.currentUser.history?.length) {
+            studentHistory.innerHTML =
+              '<p class="text-slate-500">Bạn chưa làm bài nào.</p>';
+          } else {
+            state.currentUser.history.forEach((item) => {
+              const exam = state.exams.find((e) => e.id === item.examId);
+              const row = document.createElement("div");
+              row.className = "p-2 border-b";
+              row.innerHTML = `${escapeHtml(exam?.title || "Đề")} - <strong>${
+                item.score
+              } điểm</strong> - Ngày: ${item.date}`;
+              studentHistory.appendChild(row);
+            });
+          }
+
+          // flashcard count
+          flashcardCount.textContent =
+            state.currentUser.highlightedWords?.length || 0;
+        }
+
+        document.body.addEventListener("click", (e) => {
+          const btn = e.target.closest(".start-exam-btn");
+          if (btn) {
+            const id = parseInt(btn.dataset.examId);
+            startExam(id);
+          }
+        });
+
+        function startExam(examId) {
+          const exam = state.exams.find((e) => e.id === examId);
+          examTakingTitle.textContent = exam.title;
+          examTakingContent.innerHTML = `<div data-exam-id='${examId}'>${escapeHtml(
+            exam.content
+          )}</div>`;
+          examTakingMedia.innerHTML = (exam.media || [])
+            .map((m) => `<div>${renderMediaTag(m)}</div>`)
+            .join("");
+          highlightedInSession = [];
+          showView("exam-taking-view");
+        }
+
+        examTakingContent.addEventListener("mouseup", () => {
+          const sel = window.getSelection();
+          const text = sel.toString().trim();
+          if (text.length > 0 && text.split(/\s+/).length < 5) {
+            const range = sel.getRangeAt(0);
+            const span = document.createElement("span");
+            span.className = "highlighted";
+            span.textContent = text;
+            range.deleteContents();
+            range.insertNode(span);
+            if (!highlightedInSession.includes(text.toLowerCase()))
+              highlightedInSession.push(text.toLowerCase());
+            sel.removeAllRanges();
+          }
+        });
+
+        function showNotification(message) {
+          notificationContent.textContent = message;
+          notificationPanel.classList.remove("hidden");
+          setTimeout(() => notificationPanel.classList.add("hidden"), 6000);
+        }
+
+        saveHighlightedBtn.addEventListener("click", () => {
+          const examId = parseInt(
+            examTakingContent.querySelector("[data-exam-id]").dataset.examId
+          );
+          const unique = highlightedInSession.filter(
+            (w) => !(state.currentUser.highlightedWords || []).includes(w)
+          );
+          state.currentUser.highlightedWords = (
+            state.currentUser.highlightedWords || []
+          ).concat(unique);
+          const score = Math.floor(Math.random() * 51) + 50; // demo score 50-100
+          const submission = {
+            studentId: state.currentUser.id,
+            examId,
+            score,
+            date: new Date().toLocaleDateString("vi-VN"),
+          };
+          state.submissions.push(submission);
+          (state.currentUser.history || []).push(submission);
+          toast(
+            `Nộp bài thành công! Lưu ${unique.length} từ mới. Điểm: ${score}`
+          );
+          showNotification(
+            "Bạn sẽ nhận được lời nhắc ôn tập flashcard sau 1 ngày."
+          );
+          renderStudentDashboard();
+          showView("student-view");
+        });
+
+        $("#back-to-student-dash").addEventListener("click", () =>
+          showView("student-view")
+        );
+
+        // FLASHCARDS
+        $("#view-flashcards-btn").addEventListener("click", () =>
+          showFlashcardView()
+        );
+        $("#back-to-student-dash-from-flashcard").addEventListener(
+          "click",
+          () => showView("student-view")
+        );
+        $("#flip-flashcard-btn").addEventListener("click", () =>
+          currentFlashcard.classList.toggle("is-flipped")
+        );
+        $("#prev-flashcard-btn").addEventListener("click", () => {
+          if (currentFlashcardIndex > 0) {
+            currentFlashcardIndex--;
+            renderCurrentFlashcard();
+          }
+        });
+        $("#next-flashcard-btn").addEventListener("click", () => {
+          const n = (state.currentUser.highlightedWords || []).length;
+          if (currentFlashcardIndex < n - 1) {
+            currentFlashcardIndex++;
+            renderCurrentFlashcard();
+          }
+        });
+
+        function showFlashcardView() {
+          const fc = state.currentUser.highlightedWords || [];
+          if (!fc.length) {
+            $("#flashcard-study-area").classList.add("hidden");
+            $("#no-flashcards-message").classList.remove("hidden");
+          } else {
+            $("#flashcard-study-area").classList.remove("hidden");
+            $("#no-flashcards-message").classList.add("hidden");
+            currentFlashcardIndex = 0;
+            renderCurrentFlashcard();
+          }
+          showView("flashcard-view");
+        }
+
+        function renderCurrentFlashcard() {
+          const fc = state.currentUser.highlightedWords || [];
+          if (!fc.length) return;
+          currentFlashcard.classList.remove("is-flipped");
+          const word = fc[currentFlashcardIndex];
+          $("#flashcard-front-content").textContent = word;
+          $(
+            "#flashcard-back-content"
+          ).textContent = `(Định nghĩa cho "${word}")`;
+          flashcardProgress.textContent = `Card ${
+            currentFlashcardIndex + 1
+          } / ${fc.length}`;
+          prevFlashcardBtn.disabled = currentFlashcardIndex === 0;
+          nextFlashcardBtn.disabled = currentFlashcardIndex === fc.length - 1;
+        }
+
+        // Helpers
+        function escapeHtml(str = "") {
+          return str.replace(
+            /[&<>"']/g,
+            (m) =>
+              ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;",
+              }[m])
+          );
+        }
+        function fileToDataURL(file) {
+          return new Promise((res, rej) => {
+            const r = new FileReader();
+            r.onload = () => res(r.result);
+            r.onerror = rej;
+            r.readAsDataURL(file);
+          });
+        }
+        function renderMediaTag(m, thumb = false) {
+          if (/^image\//.test(m.type))
+            return `<img class="${
+              thumb ? "media-thumb" : "w-full rounded-lg"
+            }" src="${m.dataUrl}" alt="${escapeHtml(m.name)}" loading="lazy"/>`;
+          if (/^audio\//.test(m.type))
+            return `<audio class="w-full" controls src="${m.dataUrl}"></audio>`;
+          if (/^video\//.test(m.type))
+            return `<video class="${
+              thumb ? "w-full rounded-lg" : "w-full rounded-lg"
+            }" controls src="${m.dataUrl}"></video>`;
+          return `<p class='text-sm text-slate-500'>Không hỗ trợ định dạng: ${escapeHtml(
+            m.name
+          )}</p>`;
+        }
+
+        // INIT
+        showView("auth-view");
+      });
+    </script>
+  </body>
+</html>
